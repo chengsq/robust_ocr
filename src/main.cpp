@@ -33,7 +33,7 @@ int main(int argc, const char * argv[])
     image.copyTo(detect_mat);
     /* Use Tesseract to try to decipher our image */
     tesseract::TessBaseAPI tesseract_api;
-    tesseract_api.Init(NULL, "chi_sim"  );
+    tesseract_api.Init(NULL, "chi_sim");
     tesseract_api.SetImage((uchar*) grey.data, grey.cols, grey.rows, 1, grey.cols);
 
 
