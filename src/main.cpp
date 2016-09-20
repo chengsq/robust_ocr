@@ -18,12 +18,17 @@ using namespace cv;
 
 int main(int argc, const char * argv[])
 {
-    string image_file_path =  "4.jpeg";
+    if(argc < 2){
+      printf("usage: %s input_image_name",argv[0]);
+      return 0;
+    }
+
+    string image_file_path = string(argv[1]);
     namedWindow("detection",WINDOW_AUTOSIZE );
     Mat image = imread(image_file_path);
     Mat grey;
     Mat detect_mat;
-    cvtColor( image, grey, CV_BGR2GRAY );
+    cvtColor( image, grey, CV_BGR2GRAY);
     imshow("origin",image);
     image.copyTo(detect_mat);
     /* Use Tesseract to try to decipher our image */
