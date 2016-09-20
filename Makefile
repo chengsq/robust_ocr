@@ -1,6 +1,6 @@
 TARGET	= robust_ocr
 
-CXX = g++
+CXX = clang++
 CFLAGS =  -Wall -O3 -g -DNDEBUG -std=c++11
 LDFLAGS = -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_features2d -ltesseract -llept
 
