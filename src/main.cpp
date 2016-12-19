@@ -55,15 +55,15 @@ int main(int argc, const char* argv[]) {
   int iv;
   bool bv;
   // set int variable
-  api->SetVariable("edges_max_children_per_outline", "40");
+  api->SetVariable("edges_max_children_per_outline", "30");
   api->GetIntVariable("edges_max_children_per_outline", &iv);
   printf("set edges_max_children_per_outline: %d\n", iv);
 #if 1
-  api->SetVariable("enable_new_segsearch", "F");
+  api->SetVariable("enable_new_segsearch", "T");
   api->GetBoolVariable("enable_new_segsearch", &bv);
   printf("enable_new_segsearch: %d\n", bv);
 
-  api->SetVariable("language_model_ngram_on", "F");
+  api->SetVariable("language_model_ngram_on", "T");
   api->GetBoolVariable("language_model_ngram_on", &bv);
   printf("language_model_ngram_on: %d\n", bv);
 
@@ -76,11 +76,11 @@ int main(int argc, const char* argv[]) {
   api->GetBoolVariable("chop_enable", &bv);
   printf("chop_enable: %d\n", bv);
 
-  api->SetVariable("use_new_state_cost", "F");
+  api->SetVariable("use_new_state_cost", "T");
   api->GetBoolVariable("use_new_state_cost", &bv);
   printf("use_new_state_cost: %d\n", bv);
   //tessedit_char_whitelist A0123456789
-  //api->SetVariable("tessedit_char_whitelist","01234567890");
+  api->SetVariable("tessedit_char_whitelist","01234567890");
   api->SetVariable("segment_segcost_rating", "F");
   api->GetBoolVariable("segment_segcost_rating", &bv);
   printf("segment_segcost_rating: %d\n", bv);
@@ -94,7 +94,7 @@ int main(int argc, const char* argv[]) {
     char * ocrResult = api->GetUTF8Text();
     printf("%s\n",ocrResult);
   }
-  #if 0
+  #if 1
   Boxa* boxes = api->GetComponentImages(tesseract::RIL_SYMBOL, true, NULL, NULL);
   // printf("find lines: %d", api->FindLines());
 
@@ -112,25 +112,7 @@ int main(int argc, const char* argv[]) {
     Point p1 = Point(box->x, box->y);
     Point p2 = Point(box->x + box->w, box->y + box->h);
 
-    /*if (i != boxes->n-1)
-    {
-      BOX* b11 = boxaGetBox(boxes, i+1, L_CLONE);
-      // api->SetRectangle(b11->x, b11->y, b11->w, b11->h);
-      // Point p11 = Point(b11->x, b11->y);
-      // Point p22 = Point(b11->x + b11->w, b11->y + b11->h);
 
-      if (bbOverlap(*box, *b11) > 0.1)
-      {
-        box->x = min(box->x, b11->x);
-        box->y = min(box->y, b11->y);
-        box->w = max(box->x, b11->x) - box->x;
-        box->h = max(box->y, b11->y) - box->y;
-
-        p1 = Point(box->x, box->y);
-        p2 = Point(box->x + box->w, box->y + box->h);
-        i++;
-      }
-    }*/
 
     rectangle(detect_mat, p1, p2, Scalar(0, 0, 255));
 
@@ -139,7 +121,7 @@ int main(int argc, const char* argv[]) {
     sprintf(sub_image_name, "./sub/%d.jpg", i);
     roi_img = image(Range(box->y, box->y+box->h),Range(box->x, box->x+box->w));
     imwrite(sub_image_name, roi_img);
-    //printf ("extract sub img: %s", sub_image_name);
+    printf ("extract sub img: %s", sub_image_name);
   }
   #endif
   imwrite("detection_segmentation.jpg", detect_mat);
