@@ -27,27 +27,10 @@ float bbOverlap(const BOX& box1,const BOX& box2)
     return overlapArea / min(area1, area2); //相交处的比例
 }
 
-int main(int argc, const char* argv[]) {
-  if (argc < 2) {
-    printf("usage: %s input_image_name", argv[0]);
-    return 0;
-  }
-
-  string image_file_path = string(argv[1]);
-  namedWindow("detection", WINDOW_AUTOSIZE);
-  Mat image = imread(image_file_path);
-  Mat grey;
-  Mat detect_mat;
-  cvtColor(image, grey, CV_BGR2GRAY);
-  imshow("origin", image);
-  image.copyTo(detect_mat);
-  /* Use Tesseract to try to decipher our image */
-  tesseract::TessBaseAPI tesseract_api;
-  tesseract::TessBaseAPI* api = &tesseract_api;
-
-  api->Init(NULL, "eng");
+int  ProcessConfig(char* language,
+  tesseract::TessBaseAPI* api){
+  api->Init(NULL, language);
   printf("Load language model: %s\n", api->GetInitLanguagesAsString());
-
 
   //api->SetPageSegMode(tesseract::PageSegMode::PSM_AUTO);
 
@@ -80,52 +63,70 @@ int main(int argc, const char* argv[]) {
   api->GetBoolVariable("use_new_state_cost", &bv);
   printf("use_new_state_cost: %d\n", bv);
   //tessedit_char_whitelist A0123456789
-  api->SetVariable("tessedit_char_whitelist","01234567890");
+  //api->SetVariable("tessedit_char_whitelist","01234567890");
   api->SetVariable("segment_segcost_rating", "F");
   api->GetBoolVariable("segment_segcost_rating", &bv);
   printf("segment_segcost_rating: %d\n", bv);
 
 #endif
-  //tesseract_api.Init(NULL, "chi_sim");
-  tesseract_api.SetImage((uchar*)grey.data, grey.cols, grey.rows, 1, grey.cols);
+return 0;
+}
+
+int ProcessRegcognition(Mat image,char* language,char* result){
+  tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();;
+  ProcessConfig(language,api);
+  Mat grey_img,detect_mat;
+  cvtColor(image, grey_img, CV_BGR2GRAY);
+  imshow("origin", image);
+  image.copyTo(detect_mat);
+  api->SetImage((uchar*)grey_img.data, grey_img.cols, grey_img.rows, 1, grey_img.cols);
   api->Recognize(0);
-  for (int i = 0; i < 1; ++i)
-  {
-    char * ocrResult = api->GetUTF8Text();
-    printf("%s\n",ocrResult);
-  }
-  #if 1
+
+  char* ocr_result = api->GetUTF8Text();
+  printf("%s\n",ocr_result);
+  strcpy(result,ocr_result);
+  #if 0
   Boxa* boxes = api->GetComponentImages(tesseract::RIL_SYMBOL, true, NULL, NULL);
   // printf("find lines: %d", api->FindLines());
-
-
   // bounding box
   printf("Found %d textline image components.\n", boxes->n);
   for (int i = 0; i < boxes->n; i++) {
     BOX* box = boxaGetBox(boxes, i, L_CLONE);
     api->SetRectangle(box->x, box->y, box->w, box->h);
-    // int conf = api->MeanTextConf();
-    // char *ocrResult = api->GetUTF8Text();
-    // fprintf(stdout, "Box[%d]: x=%d, y=%d, w=%d, h=%d, confidence: %d, text:
-    // %s",
-    //                i, box->x, box->y, box->w, box->h, conf, ocrResult);
+    int conf = api->MeanTextConf();
+    char *ocrResult = api->GetUTF8Text();
+    printf("Box[%d]: x=%d, y=%d, w=%d, h=%d, confidence: %d, text: %s", i, box->x, box->y, box->w, box->h, conf, ocrResult);
     Point p1 = Point(box->x, box->y);
     Point p2 = Point(box->x + box->w, box->y + box->h);
-
-
-
     rectangle(detect_mat, p1, p2, Scalar(0, 0, 255));
-
+    #if 0
     Mat roi_img;
     char sub_image_name[128];
     sprintf(sub_image_name, "./sub/%d.jpg", i);
     roi_img = image(Range(box->y, box->y+box->h),Range(box->x, box->x+box->w));
     imwrite(sub_image_name, roi_img);
-    printf ("extract sub img: %s", sub_image_name);
+    //printf ("extract sub img: %s", sub_image_name);
+    #endif
   }
   #endif
+  delete api;
   imwrite("detection_segmentation.jpg", detect_mat);
   imshow("detection", detect_mat);
+  return 1;
+}
+
+int main(int argc, const char* argv[]) {
+  if (argc < 2) {
+    printf("usage: %s input_image_name", argv[0]);
+    return 0;
+  }
+
+  string image_file_path = string(argv[1]);
+  namedWindow("detection", WINDOW_AUTOSIZE);
+  Mat image = imread(image_file_path);
+  char* string_result = new char[1024];
+  ProcessRegcognition(image,"eng",string_result);
+  printf("%s\n",string_result);
   waitKey();
   return 0;
 }
