@@ -27,27 +27,10 @@ float bbOverlap(const BOX& box1,const BOX& box2)
     return overlapArea / min(area1, area2); //相交处的比例
 }
 
-int main(int argc, const char* argv[]) {
-  if (argc < 2) {
-    printf("usage: %s input_image_name", argv[0]);
-    return 0;
-  }
-
-  string image_file_path = string(argv[1]);
-  namedWindow("detection", WINDOW_AUTOSIZE);
-  Mat image = imread(image_file_path);
-  Mat grey;
-  Mat detect_mat;
-  cvtColor(image, grey, CV_BGR2GRAY);
-  imshow("origin", image);
-  image.copyTo(detect_mat);
-  /* Use Tesseract to try to decipher our image */
-  tesseract::TessBaseAPI tesseract_api;
-  tesseract::TessBaseAPI* api = &tesseract_api;
-
-  api->Init(NULL, "eng");
+int  ProcessConfig(char* language,
+  tesseract::TessBaseAPI* api){
+  api->Init(NULL, language);
   printf("Load language model: %s\n", api->GetInitLanguagesAsString());
-
 
   //api->SetPageSegMode(tesseract::PageSegMode::PSM_AUTO);
 
@@ -86,64 +69,62 @@ int main(int argc, const char* argv[]) {
   printf("segment_segcost_rating: %d\n", bv);
 
 #endif
-  //tesseract_api.Init(NULL, "chi_sim");
-  tesseract_api.SetImage((uchar*)grey.data, grey.cols, grey.rows, 1, grey.cols);
+return 0;
+}
+
+int ProcessRegcognition(Mat image,char* language,char* result){
+  tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();;
+  ProcessConfig(language,api);
+  Mat grey_img,detect_mat;
+  cvtColor(image, grey_img, CV_BGR2GRAY);
+  imshow("origin", image);
+  image.copyTo(detect_mat);
+  api->SetImage((uchar*)grey_img.data, grey_img.cols, grey_img.rows, 1, grey_img.cols);
   api->Recognize(0);
-  for (int i = 0; i < 1; ++i)
-  {
-    char * ocrResult = api->GetUTF8Text();
-    printf("%s\n",ocrResult);
-  }
-  #if 0
+  result = api->GetUTF8Text();
+  printf("%s\n",result);
+
+  #if 1
   Boxa* boxes = api->GetComponentImages(tesseract::RIL_SYMBOL, true, NULL, NULL);
   // printf("find lines: %d", api->FindLines());
-
-
   // bounding box
   printf("Found %d textline image components.\n", boxes->n);
   for (int i = 0; i < boxes->n; i++) {
     BOX* box = boxaGetBox(boxes, i, L_CLONE);
     api->SetRectangle(box->x, box->y, box->w, box->h);
-    // int conf = api->MeanTextConf();
-    // char *ocrResult = api->GetUTF8Text();
-    // fprintf(stdout, "Box[%d]: x=%d, y=%d, w=%d, h=%d, confidence: %d, text:
-    // %s",
-    //                i, box->x, box->y, box->w, box->h, conf, ocrResult);
+    int conf = api->MeanTextConf();
+    char *ocrResult = api->GetUTF8Text();
+    printf("Box[%d]: x=%d, y=%d, w=%d, h=%d, confidence: %d, text: %s", i, box->x, box->y, box->w, box->h, conf, ocrResult);
     Point p1 = Point(box->x, box->y);
     Point p2 = Point(box->x + box->w, box->y + box->h);
-
-    /*if (i != boxes->n-1)
-    {
-      BOX* b11 = boxaGetBox(boxes, i+1, L_CLONE);
-      // api->SetRectangle(b11->x, b11->y, b11->w, b11->h);
-      // Point p11 = Point(b11->x, b11->y);
-      // Point p22 = Point(b11->x + b11->w, b11->y + b11->h);
-
-      if (bbOverlap(*box, *b11) > 0.1)
-      {
-        box->x = min(box->x, b11->x);
-        box->y = min(box->y, b11->y);
-        box->w = max(box->x, b11->x) - box->x;
-        box->h = max(box->y, b11->y) - box->y;
-
-        p1 = Point(box->x, box->y);
-        p2 = Point(box->x + box->w, box->y + box->h);
-        i++;
-      }
-    }*/
-
     rectangle(detect_mat, p1, p2, Scalar(0, 0, 255));
-
+    #if 0
     Mat roi_img;
     char sub_image_name[128];
     sprintf(sub_image_name, "./sub/%d.jpg", i);
     roi_img = image(Range(box->y, box->y+box->h),Range(box->x, box->x+box->w));
     imwrite(sub_image_name, roi_img);
     //printf ("extract sub img: %s", sub_image_name);
+    #endif
   }
   #endif
+  delete api;
   imwrite("detection_segmentation.jpg", detect_mat);
   imshow("detection", detect_mat);
+  return 1;
+}
+
+int main(int argc, const char* argv[]) {
+  if (argc < 2) {
+    printf("usage: %s input_image_name", argv[0]);
+    return 0;
+  }
+
+  string image_file_path = string(argv[1]);
+  namedWindow("detection", WINDOW_AUTOSIZE);
+  Mat image = imread(image_file_path);
+  char* string_result;
+  ProcessRegcognition(image,"chi_sim",string_result);
   waitKey();
   return 0;
 }
