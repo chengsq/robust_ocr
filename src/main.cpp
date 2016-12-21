@@ -27,7 +27,7 @@ float bbOverlap(const BOX& box1,const BOX& box2)
     return overlapArea / min(area1, area2); //相交处的比例
 }
 
-int  ProcessConfig(char* language,
+int  ProcessConfig(const char* language,
   tesseract::TessBaseAPI* api){
   api->Init(NULL, language);
   printf("Load language model: %s\n", api->GetInitLanguagesAsString());
@@ -72,7 +72,7 @@ int  ProcessConfig(char* language,
 return 0;
 }
 
-int ProcessRegcognition(Mat image,char* language,char* result){
+int ProcessRegcognition(Mat image,const char* language,char* result){
   tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();;
   ProcessConfig(language,api);
   Mat grey_img,detect_mat;
@@ -116,16 +116,17 @@ int ProcessRegcognition(Mat image,char* language,char* result){
 }
 
 int main(int argc, const char* argv[]) {
-  if (argc < 2) {
-    printf("usage: %s input_image_name", argv[0]);
+  if (argc < 3) {
+    printf("usage: %s input_image_name  langguage", argv[0]);
     return 0;
   }
 
   string image_file_path = string(argv[1]);
+  const char *language = argv[2];
   namedWindow("detection", WINDOW_AUTOSIZE);
   Mat image = imread(image_file_path);
   char* string_result = new char[1024];
-  ProcessRegcognition(image,"eng",string_result);
+  ProcessRegcognition(image,language,string_result);
   printf("%s\n",string_result);
   waitKey();
   return 0;
